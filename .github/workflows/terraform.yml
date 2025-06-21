@@ -26,10 +26,11 @@ on:
         required: true
         default: "variables.tfvars.json"
         type: string
-      backend_bucket:
-        description: "S3 bucket to store Terraform state files"
+      with_backend:
+        description: "Use S3 backend for Terraform state"
         required: false
-        type: string
+        type: boolean
+        default: true
 
 permissions:
   id-token: write
@@ -63,15 +64,15 @@ jobs:
         uses: hashicorp/setup-terraform@v3
           
       - name: Terraform Init without s3 backend
-        if: ${{ inputs.backend_bucket == '' }}
+        if: inputs.with_backend == false
         working-directory: Infrastructure
         run: terraform init
 
       - name: Terraform Init with s3 backend
-        if: ${{ inputs.backend_bucket != '' }}
+        if: inputs.with_backend
         working-directory: Infrastructure
         run: |
-          terraform init -backend-config="bucket=${{ inputs.backend_bucket }}" -backend-config="key=${{ inputs.app_name }}/terraform.tfstate" -backend-config="region=${{ inputs.aws_region }}" -backend-config="encrypt=true" -backend-config="use_lockfile=true"
+          terraform init -backend-config="bucket=terraform-state-bucket" -backend-config="key=${{ inputs.app_name }}/terraform.tfstate" -backend-config="region=${{ inputs.aws_region }}" -backend-config="encrypt=true" -backend-config="use_lockfile=true"
 
       - name: Debug Terraform State
         working-directory: Infrastructure
