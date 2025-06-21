@@ -67,6 +67,10 @@ jobs:
         working-directory: Infrastructure
         run: terraform init
 
+      - name: Debug Terraform State
+        working-directory: Infrastructure
+        run: terraform state list
+
       - name: Terraform Init with s3 backend
         if: ${{ inputs.backend_bucket != '' }}
         working-directory: Infrastructure
