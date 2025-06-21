@@ -4,98 +4,96 @@ on:
   workflow_call:
     secrets:
       aws_identity_provider_role:
-        description: "AWS Identity Provider Role"
+        description: "AWS IAM Role to assume for Terraform operations"
         required: true
     inputs:
       app_name:
-        description: "Name of the app to deploy"
+        description: "Application Name"
         required: true
         type: string
       aws_region:
-        description: "AWS Region to Deploy"
+        description: "AWS Region for Terraform operations"
         required: true
         type: string
         default: "ap-south-1"
-      with_backend:
-        description: "need terraform with backend to store state"
-        required: false
-        default: false
-        type: boolean
-      backend_bucket:
-        description: "terraform backend bucket name"
-        required: false
-        type: string
-      TF_WORKING_DIR:
-        description: "Terraform working directory"
-        required: true
-        type: string
-      tfvars_file_name:
-        description: "Name of the tfvars file to use"
-        required: false
-        default: "variables.tfvars.json"
-        type: string
       command:
-        description: "Run Terraform commands"
+        description: "Command to execute: 'apply' or 'destroy'"
         required: true
         type: string
         default: apply
+      tfvars_file_path:
+        description: "Path to the Terraform variables file"
+        required: true
+        default: "variables.tfvars.json"
+        type: string
+      backend_bucket:
+        description: "S3 bucket to store Terraform state files"
+        required: false
+        type: string
 
 permissions:
   id-token: write
 
 jobs:
-  terraform:
-    name: "Terraform Plan and Apply"
+  terraform_operations:
+    name: "Terraform Operations"
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ${{ inputs.TF_WORKING_DIR }}
 
     steps:
-      - name: Validate Terraform Backend Configuration (backend_bucket)
-        if: ${{ inputs.with_backend == true && !inputs.backend_bucket }}
-        run: |
-          echo "Error: backend_bucket must be provided for terraform with s3 backend to store state files"
-          exit 1
-
-      - name: Checkout code
-        uses: actions/checkout@v3
-
       - name: Configure AWS
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.aws_identity_provider_role }}
           aws-region: ${{ inputs.aws_region }}
 
+      - name: Download Artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: Deployment-Terraform
+
+      - name: Extract Artifact
+        run: |
+          mkdir -p terraform
+          echo "Extracting files from Deployment-Terraform.tar.gz"
+          tar -xzf Deployment-Terraform.tar.gz -C Infrastructure
+          cd Infrastructure
+          echo "Extracted files to $(pwd)"
+
+      - name: Change Directory to Terraform
+        run: cd terraform
+
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v3
-
-      - name: Logs Paths
-        run: |
-          echo "${{ inputs.TF_WORKING_DIR }}"
           
       - name: Terraform Init without s3 backend
-        if: ${{ inputs.with_backend == false }}
+        if: ${{ inputs.backend_bucket == '' }}
+        working-directory: Infrastructure
         run: terraform init
 
       - name: Terraform Init with s3 backend
-        if: ${{ inputs.with_backend == true }}
+        if: ${{ inputs.backend_bucket != '' }}
+        working-directory: Infrastructure
         run: |
           terraform init -backend-config="bucket=${{ inputs.backend_bucket }}" -backend-config="key=${{ inputs.app_name }}/terraform.tfstate" -backend-config="region=${{ inputs.aws_region }}" -backend-config="encrypt=true" -backend-config="use_lockfile=true"
 
       - name: Terraform Format
+        working-directory: Infrastructure
         run: terraform fmt -check
 
       - name: Terraform Validate
+        working-directory: Infrastructure
         run: terraform validate
 
       - name: Terraform Plan
-        run: terraform plan -out=tfplan -var-file="${{ inputs.tfvars_file_name }}"
+        working-directory: Infrastructure
+        run: terraform plan -out=tfplan -var-file="${{ inputs.tfvars_file_path }}"
 
       - name: Terraform Apply
         if: inputs.command == 'apply'
+        working-directory: Infrastructure
         run: terraform apply -auto-approve tfplan
 
       - name: Terraform Destroy
         if: inputs.command == 'destroy'
+        working-directory: Infrastructure
         run: terraform destroy -auto-approve tfplan
