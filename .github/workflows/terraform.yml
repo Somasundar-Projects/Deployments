@@ -92,11 +92,5 @@ jobs:
         run: terraform plan -out=tfplan -var-file="${{ inputs.tfvars_file_path }}" -destroy
 
       - name: Terraform Apply
-        if: inputs.command == 'apply'
         working-directory: Infrastructure
         run: terraform apply -auto-approve tfplan
-
-      - name: Terraform Destroy
-        if: inputs.command == 'destroy'
-        working-directory: Infrastructure
-        run: terraform destroy -auto-approve tfplan
