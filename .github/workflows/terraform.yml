@@ -81,9 +81,15 @@ jobs:
         working-directory: Infrastructure
         run: terraform validate
 
-      - name: Terraform Plan
+      - name: Terraform Plan Apply
         working-directory: Infrastructure
+        if: inputs.command == 'apply'
         run: terraform plan -out=tfplan -var-file="${{ inputs.tfvars_file_path }}"
+
+      - name: Terraform Plan Destroy
+        working-directory: Infrastructure
+        if: inputs.command == 'destroy'
+        run: terraform plan -out=tfplan -var-file="${{ inputs.tfvars_file_path }}" -destroy
 
       - name: Terraform Apply
         if: inputs.command == 'apply'
