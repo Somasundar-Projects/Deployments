@@ -53,7 +53,7 @@ jobs:
 
       - name: Extract Artifact
         run: |
-          mkdir -p terraform
+          mkdir -p Infrastructure
           echo "Extracting files from Deployment-Terraform.tar.gz"
           tar -xzf Deployment-Terraform.tar.gz -C Infrastructure
           echo "Extracted files to $(pwd)"
