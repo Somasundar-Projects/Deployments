@@ -67,15 +67,15 @@ jobs:
         working-directory: Infrastructure
         run: terraform init
 
-      - name: Debug Terraform State
-        working-directory: Infrastructure
-        run: terraform state list
-
       - name: Terraform Init with s3 backend
         if: ${{ inputs.backend_bucket != '' }}
         working-directory: Infrastructure
         run: |
           terraform init -backend-config="bucket=${{ inputs.backend_bucket }}" -backend-config="key=${{ inputs.app_name }}/terraform.tfstate" -backend-config="region=${{ inputs.aws_region }}" -backend-config="encrypt=true" -backend-config="use_lockfile=true"
+
+      - name: Debug Terraform State
+        working-directory: Infrastructure
+        run: terraform state list
 
       - name: Terraform Format
         working-directory: Infrastructure
