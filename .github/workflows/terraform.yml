@@ -35,6 +35,11 @@ on:
         description: "S3 Bucket Name for Terraform state"
         required: false
         type: string
+      evironment:
+        description: "Environment for the application (e.g., dev, prod)"
+        required: true
+        type: string
+        default: dev
 
 permissions:
   id-token: write
@@ -82,7 +87,7 @@ jobs:
         if: inputs.with_backend
         working-directory: Infrastructure
         run: |
-          terraform init -backend-config="bucket=${{ inputs.bucket_name }}" -backend-config="key=${{ inputs.app_name }}/terraform.tfstate" -backend-config="region=${{ inputs.aws_region }}" -backend-config="encrypt=true" -backend-config="use_lockfile=true"
+          terraform init -backend-config="bucket=${{ inputs.bucket_name }}" -backend-config="key=${{ inputs.app_name }}/${{ inputs.evironment }}/terraform.tfstate" -backend-config="region=${{ inputs.aws_region }}" -backend-config="encrypt=true" -backend-config="use_lockfile=true"
 
       - name: Terraform Format
         working-directory: Infrastructure
