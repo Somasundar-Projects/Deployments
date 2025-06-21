@@ -31,6 +31,10 @@ on:
         required: false
         type: boolean
         default: true
+      bucket_name:
+        description: "S3 Bucket Name for Terraform state"
+        required: false
+        type: string
 
 permissions:
   id-token: write
@@ -41,6 +45,12 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Validate Backend Bucket Name
+        if: inputs.with_backend && !inputs.bucket_name
+        run: |
+          echo "Error: S3 bucket name is required when using backend."
+          exit 1
+
       - name: Configure AWS
         uses: aws-actions/configure-aws-credentials@v4
         with:
