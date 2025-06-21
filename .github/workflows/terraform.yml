@@ -75,6 +75,7 @@ jobs:
           terraform init -backend-config="bucket=terraform-state-bucket" -backend-config="key=${{ inputs.app_name }}/terraform.tfstate" -backend-config="region=${{ inputs.aws_region }}" -backend-config="encrypt=true" -backend-config="use_lockfile=true"
 
       - name: Debug Terraform State
+        if: inputs.with_backend
         working-directory: Infrastructure
         run: terraform state list
 
