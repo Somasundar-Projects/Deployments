@@ -56,8 +56,8 @@ jobs:
           mkdir -p terraform
           echo "Extracting files from Deployment-Terraform.tar.gz"
           tar -xzf Deployment-Terraform.tar.gz -C Infrastructure
-          cd Infrastructure
           echo "Extracted files to $(pwd)"
+          ls -la Infrastructure
 
       - name: Change Directory to Terraform
         run: cd terraform
