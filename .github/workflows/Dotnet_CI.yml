@@ -1,0 +1,47 @@
+name: Dotnet CI
+on:
+    workflow_call:
+      inputs:
+        app_name:
+            description: "Application Name"
+            required: true
+            type: string
+        aws_region:
+            description: "AWS Region for CI/CD operations"
+            required: true
+            type: string
+            default: "ap-south-1"
+        dotnet_version:
+            description: "Version of .NET SDK to use"
+            required: true
+            type: string
+            default: "8.0.x"
+        Solution_File_Path:
+            description: "Path to the .NET project file"
+            required: true
+            type: string
+
+jobs:
+    build:
+        runs-on: ubuntu-latest
+
+        steps:
+        - name: Checkout Code
+          uses: actions/checkout@v4
+
+        - name: Setup .NET
+          uses: actions/setup-dotnet@v3
+          with:
+            dotnet-version: ${{ inputs.dotnet_version }}
+
+        - name: Restore Dependencies
+          run: dotnet restore
+          working-directory: ${{ inputs.Solution_File_Path }}
+
+        - name: Build Project
+          run: dotnet build  --configuration Release --no-restore --verbosity normal
+          working-directory: ${{ inputs.Solution_File_Path }}
+
+        - name: Run Tests
+          run: dotnet test --configuration Release --no-build --verbosity normal
+          working-directory: ${{ inputs.Solution_File_Path }}
